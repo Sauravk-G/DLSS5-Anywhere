@@ -1,0 +1,34 @@
+# DLSS5-Anywhere dependencies
+#
+#   pip install -r requirements.txt
+#
+# Three packages, all of them load-bearing. Everything else this tool needs is either in
+# the standard library or already on a Windows 10/11 machine.
+
+# The user interface. By far the largest of these (~250 MB) and the only one the GUI
+# needs - main.py imports it lazily, so `python main.py detect ...` and every other CLI
+# command run without Qt being loaded at all.
+#
+# It brings shiboken6 with it at an exactly pinned version. qtgui/workers.py imports
+# shiboken6 directly but it is deliberately not listed here: pinning it separately is how
+# the two pins end up disagreeing and neither installs.
+PySide6>=6.7
+
+# Reads the PE header of a game executable - architecture, import table, delay imports.
+# This is how the rendering API and the 32/64-bit split are detected, and it is the one
+# dependency the CLI cannot do without.
+pefile>=2024.8.26
+
+# Fetches the public components and queries the GitHub release APIs.
+requests>=2.31.0
+
+# Not required, and deliberately so:
+#
+#   py7zr    OptiScaler is the one component published as .7z, and py7zr looks like the
+#            answer until it is tried: it cannot decode the BCJ2 filter that archive uses
+#            and fails part-way through, after writing the .ini files and before the DLLs
+#            that are the whole point. The downloader uses bsdtar instead - shipped with
+#            Windows as System32\tar.exe - which reads it correctly, with 7-Zip as a
+#            fallback if it happens to be installed. Ten packages saved, and it works.
+#
+#   packaging  was listed here but nothing imports it.

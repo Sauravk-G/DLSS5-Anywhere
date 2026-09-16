@@ -1,0 +1,90 @@
+# The test suite, on every push and pull request.
+#
+# Windows only, and deliberately so. This tool reads PE headers, walks the registry for
+# Steam and GOG installs, and unpacks a .7z with the bsdtar that ships in System32 - none
+# of which means anything on a Linux runner, and a green tick from a platform the software
+# does not target is worse than no tick at all.
+#
+# The job installs from requirements.txt rather than a hand-picked subset, so the file
+# people are told to use is the file that gets exercised. The suite itself imports no Qt
+# and needs no display.
+
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A new push supersedes whatever was still running for the same branch.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false          # a break on one version should not hide the others
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Check the components directory is empty
+        # The suite has to pass on a clean checkout. Two tests once asserted that a file
+        # only present after pressing Download had been staged: they passed for whoever
+        # had already downloaded it and failed for everybody else. A runner is the
+        # strictest possible clean checkout, which is the point of running them here.
+        shell: bash
+        run: |
+          test ! -d components || { echo "components/ should not be in the repo"; exit 1; }
+          echo "clean checkout confirmed"
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check the GUI imports and builds a window
+        # Not part of the suite, because the suite is headless on purpose. Qt's offscreen
+        # platform needs no display, so the one thing worth checking here is that all
+        # seven views still construct - which is what catches a typo in a view that no
+        # unit test touches.
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python -c "from dlss5_anywhere.qtgui.app import build_application, MainWindow; app = build_application([]); w = MainWindow(); w.show(); app.processEvents(); print('GUI built', len(w._views), 'views'); assert len(w._views) == 7"
+
+      - name: Check the CLI runs without loading Qt
+        # main.py imports the GUI lazily so command-line use does not pay for PySide6.
+        # That is an easy thing to undo by accident with one import moved to the top.
+        shell: bash
+        run: |
+          python main.py components
+          python - <<'PY'
+          import contextlib, io, runpy, sys
+          sys.argv = ["main.py", "components"]
+          with contextlib.redirect_stdout(io.StringIO()):
+              try:
+                  runpy.run_path("main.py", run_name="__main__")
+              except SystemExit:
+                  pass
+          loaded = [m for m in sys.modules if m.startswith("PySide6")]
+          assert not loaded, f"the CLI imported Qt: {loaded[:3]}"
+          print("CLI ran without loading Qt")
+          PY

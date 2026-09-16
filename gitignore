@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Proprietary and third-party binaries - NEVER commit these
+#
+# This repository is an installer and a configuration generator. It does not
+# redistribute NVIDIA runtimes, the RenoDX add-on, or any of the wrappers it
+# downloads: the user supplies their own. Committing components/ would make that
+# claim in the README untrue, put ~1 GB of other people's binaries under this
+# project's MIT licence, and redistribute NVIDIA's NGX runtimes without the right
+# to do so.
+# ---------------------------------------------------------------------------
+components/
+builds/
+
+# Generated preset files - recreated from BUILTIN_PRESETS on first run
+profiles/*.json
+
+# The user's own list of games. Local state, and it is a list of paths on their
+# machine - it belongs to the install, not to the repository.
+library/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------------------------------------------------------------------------
+# Tool output and local state
+# ---------------------------------------------------------------------------
+*.log
+dlss5-feed.log
+ReShade.log*
+.dlss5_backup/
+dlss5_manifest.json
+
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+Desktop.ini

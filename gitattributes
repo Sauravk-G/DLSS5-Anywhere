@@ -1,0 +1,40 @@
+# Line endings are decided here rather than by whatever each contributor's Git happens to
+# be configured with.
+#
+# Without this file the repository stores whichever endings the committing machine had on
+# disk. This one stored CRLF, which means a contributor on Linux or macOS clones the
+# project and sees every file as modified the moment they touch one, and their first pull
+# request arrives as a whole-file diff with two real changed lines somewhere inside it.
+
+# Normalise every text file to LF inside the repository. Working copies still get the
+# platform's native endings on checkout, so nothing changes for anyone on Windows.
+* text=auto
+
+# Batch and PowerShell scripts are read by cmd.exe and powershell.exe, which want CRLF.
+# Forced on every platform, so a checkout on Linux copied back to Windows still runs.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Shell scripts must keep LF or the shebang line takes the carriage return with it and the
+# script does not run at all.
+*.sh    text eol=lf
+
+# Binaries: never converted, never diffed as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+
+# The component payloads this tool installs. They are gitignored, but if one is ever
+# committed deliberately it must arrive byte for byte - a wrapper DLL with its newlines
+# "fixed" is a corrupt DLL.
+*.dll       binary
+*.exe       binary
+*.addon32   binary
+*.addon64   binary
+*.7z        binary
+*.zip       binary
+*.tar.gz    binary
